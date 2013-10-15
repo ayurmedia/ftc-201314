@@ -13,7 +13,7 @@
 #include "JoystickDriver.c"  //Include file to "handle" the Bluetooth messages.
 
 const int DT_POWER_CAP = 80;
-const int DRIVE_TIME = 3500;
+const int DRIVE_TIME = 60000;
 // Moves forward 6 feet on a direct drive drivetrain.
 
 void initializeRobot()
