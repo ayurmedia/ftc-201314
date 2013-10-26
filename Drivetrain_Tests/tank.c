@@ -1,63 +1,95 @@
-#pragma config(Hubs,  S1, HTMotor,  HTMotor,  none,     none)
-#pragma config(Sensor, S1,     external_controller, sensorI2CMuxController)
-#pragma config(Motor,  mtr_S1_C1_1,     dt_back_left,  tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C1_2,     dt_back_right, tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C2_1,     dt_front_left, tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C2_2,     dt_front_right, tmotorTetrix, openLoop)
+#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  none)
+#pragma config(Sensor, S1,     ,               sensorI2CMuxController)
+#pragma config(Motor,  mtr_S1_C1_1,     dt_left,       tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C2_1,     	flag_raiser,   tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C2_2,     archemedes,    tmotorTetrix, openLoop)
+#pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_2,    UNUSED1,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_3,    UNUSED2,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_4,    UNUSED3,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_5,    UNUSED4,              tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_6,    UNUSED5,              tServoStandard)
 
-// Include file to "handle" the Bluetooth messages.
 #include "JoystickDriver.c"
 
-// Constants
-const int JOY_DEADZONE = 7;
-const int MAX_DT_POWER = 80;
-const float MAX_JOY_VAL = 127.0;
+// Data structure to try to keep things object-oriented and modular
+// Maps every motor to its #pragma, its max power, and its output during every loop
+// Eliminates the need to keep multiple variables for each motor
+typedef struct {
+	short id;
+	int MAX_POWER;
+	int output;
+} Actuator;
+
+
+// Sets servo's starting position
+// Initializes all fields for "Actuators"
+void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator* p_as) {
+  servo[auto_block] = 0;
+
+  p_dtl->id = dt_left;
+  p_dtl->MAX_POWER = 80;
+  p_dtl->output = 0;
+
+  p_dtr->id = dt_right;
+  p_dtr->MAX_POWER = 80;
+  p_dtr->output = 0;
+
+  p_fr->id = flag_raiser;
+  p_fr->MAX_POWER = 80;
+  p_fr->output = 0;
+
+  p_as->id = archemedes;
+  p_as->MAX_POWER = 50;
+  p_as->output = 0;
+}
 
 // Converts raw joystick values, which range from -128 to 127, into motor powers
-int scaleJoyValue (float rawJoyVal) {
-	// If the joystick value is the within the deadzone, do not move motors
-	if(abs(rawJoyVal) < JOY_DEADZONE) {
-		return 0;
-	}
+int scaleJoyValue(Actuator* p_act, float p_joy_val) {
+		// In C(++), static varaibles are declared once and only once during the run-time of the program.
+		static const int DEADZONE = 7;
+		static const float JOY_MAX_VAL = 127.0;
 
-	// In all other cases, to scale the joystick value into motor value,
-		// use an algorithm of function m(j) = (j^2)/(MJ^2) * MM,
-		// where m = motor output, j = raw joystick value, MJ = MAX_JOY_VAL, and MM = MAX_DT_POWER.
-	// HOWEVER, squaring the raw joystick value would eliminate the sign (+/-),
-		// so extra precaution need be taken to preserve the direction.
-	int direction = rawJoyVal / abs(rawJoyVal);
-	return direction * (rawJoyVal*rawJoyVal) / (MAX_JOY_VAL*MAX_JOY_VAL) * MAX_DT_POWER;
+		// If the joystick value is the within the deadzone, do not move motors
+		if(abs(p_joy_val) < DEADZONE) {
+			p_act->output = 0;
+		}
+		// In all other cases, to scale the joystick value into motor value,
+			// use an algorithm of function m(j) = (j^2)/(JM^2) * MM,
+			// where m = motor output, j = raw joystick value, JM = JOY_MAX_VAL, and MM = specific motor's MAX_POWER.
+		// HOWEVER, squaring the raw joystick value would eliminate the sign (+/-),
+			// so extra precaution need be taken to preserve the direction.
+		else {
+			int direction = p_joy_val / abs(p_joy_val);
+			p_act->output =  direction * (p_joy_val*p_joy_val) / (JOY_MAX_VAL*JOY_MAX_VAL) * p_act->MAX_POWER;
+		}
+
+		return p_act->output;
 }
 
-// Set all drivetrain motors to 0
-void initializeRobot() {
-	motor[dt_back_left] = 0;
-	motor[dt_front_left] = 0;
-	motor[dt_back_right] = 0;
-	motor[dt_front_right] = 0;
-}
-
-// Main loop; follows an IPO model
+// Program's entry point; includes main loop
 task main() {
-	initializeRobot();
-	// waitForStart();
+	// Drivetrain left, drivetrain right, flag raiser, archemedes screw
+	Actuator dtl, dtr, fr, as;
 
-	int dt_left_power = 0, dt_right_power = 0;
+	initializeRobot(&dtl, &dtr, &fr, &as);
+  // waitForStart();
 
-	for(;/*ever*/;) {
-		// Get inputs
-		// Updates joystick values
-		getJoystickSettings(joystick);
+  for(;/*ever*/;) {
+  	// Get inputs
+	  getJoystickSettings(joystick);
 
-		// Process inputs
-		dt_left_power = scaleJoyValue(joystick.joy1_y1);
-		dt_right_power = scaleJoyValue(joystick.joy1_y2);
+	  // Process inputs
+	  scaleJoyValue(&dtl, joystick.joy1_y1);
+	  scaleJoyValue(&dtr, joystick.joy1_y2);
+	  scaleJoyValue(&fr, joystick.joy1_y1);
+	  scaleJoyValue(&as, joystick.joy1_y2);
 
-		// Output to actuators
-		motor[dt_back_left] = dt_left_power;
-		motor[dt_front_left] = dt_left_power;
-		motor[dt_back_right] = dt_right_power;
-		motor[dt_front_right] = dt_right_power;
-
-	}
+	  // Output
+	  motor[dtl.id] = dtl.output;
+	  motor[dtr.id] = dtr.output;
+	  motor[fr.id] = fr.output;
+	  motor[as.id] = as.output;
+  }
 }
