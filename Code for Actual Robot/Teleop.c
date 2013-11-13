@@ -47,44 +47,44 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
 
 // Converts raw joystick values, which range from -128 to 127, into motor powers
 int scaleJoyValue(Actuator* p_act, float p_joy_val) {
-		// In C(++), static varaibles are declared once and only once during the run-time of the program.
-		static const int DEADZONE = 7;
-		static const float JOY_MAX_VAL = 127.0;
+	// In C(++), static varaibles are declared once and only once during the run-time of the program.
+	static const int DEADZONE = 7;
+	static const float JOY_MAX_VAL = 127.0;
 
-		// If the joystick value is the within the deadzone, do not move motors
-		if(abs(p_joy_val) < DEADZONE) {
-			p_act->output = 0;
-		}
-		// In all other cases, to scale the joystick value into motor value,
-			// use an algorithm of function m(j) = (j^2)/(JM^2) * MM,
-			// where m = motor output, j = raw joystick value, JM = JOY_MAX_VAL, and MM = specific motor's MAX_POWER.
-		// HOWEVER, squaring the raw joystick value would eliminate the sign (+/-),
-			// so extra precaution need be taken to preserve the direction.
-		else {
-			int direction = p_joy_val / abs(p_joy_val);
-			p_act->output =  direction * (p_joy_val*p_joy_val) / (JOY_MAX_VAL*JOY_MAX_VAL) * p_act->MAX_POWER;
-		}
+	// If the joystick value is the within the deadzone, do not move motors
+	if(abs(p_joy_val) < DEADZONE) {
+		p_act->output = 0;
+	}
+	// In all other cases, to scale the joystick value into motor value,
+		// use an algorithm of function m(j) = (j^2)/(JM^2) * MM,
+		// where m = motor output, j = raw joystick value, JM = JOY_MAX_VAL, and MM = specific motor's MAX_POWER.
+	// HOWEVER, squaring the raw joystick value would eliminate the sign (+/-),
+		// so extra precaution need be taken to preserve the direction.
+	else {
+		int direction = p_joy_val / abs(p_joy_val);
+		p_act->output =  direction * (p_joy_val*p_joy_val) / (JOY_MAX_VAL*JOY_MAX_VAL) * p_act->MAX_POWER;
+	}
 
-		return p_act->output;
+	return p_act->output;
 }
 
 void nudgeDrive(Actuator* a_dtl, Actuator* a_dtr) {
 	const static int NUDGE_POWER = 25;
 	
-	if(joy1Btn(7)) {
-		a_dtl->output = NUDGE_POWER;
-	} else if(joy1Btn(5)) {
-		a_dtl->output = -NUDGE_POWER;
-	} else {
-		a_dtl->output = 0;
+	if(a_dtl->ouptut == 0) {
+		if(joy1Btn(7)) {
+			a_dtl->output = NUDGE_POWER;
+		} else if(joy1Btn(5)) {
+			a_dtl->output = -NUDGE_POWER;
+		}
 	}
 
-	if(joy1Btn(8)) {
-		a_dtr->output = NUDGE_POWER;
-	} else if(joy1Btn(6)) {
-		a_dtr->output = -NUDGE_POWER;
-	} else {
-		a_dtr->output = 0;
+	if(a_dtr->output == 0) {
+		if(joy1Btn(8)) {
+			a_dtr->output = NUDGE_POWER;
+		} else if(joy1Btn(6)) {
+			a_dtr->output = -NUDGE_POWER;
+		}
 	}
 }
 
@@ -101,11 +101,12 @@ task main() {
 	  getJoystickSettings(joystick);
 
 	  // Process inputs
-	  nudgeDrive(&dtl, &dtr);
 	  scaleJoyValue(&dtl, joystick.joy1_y1);
 	  scaleJoyValue(&dtr, joystick.joy1_y2);
 	  scaleJoyValue(&fr, joystick.joy2_y1);
 	  scaleJoyValue(&as, joystick.joy2_y2);
+
+	  nudgeDrive(&dtl, &dtr);
 
 	  // Output
 	  motor[dtl.id] = dtl.output;
