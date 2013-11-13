@@ -68,6 +68,26 @@ int scaleJoyValue(Actuator* p_act, float p_joy_val) {
 		return p_act->output;
 }
 
+void nudgeDrive(Actuator* a_dtl, Actuator* a_dtr) {
+	const static int NUDGE_POWER = 25;
+	
+	if(joy1Btn(7)) {
+		a_dtl->output = NUDGE_POWER;
+	} else if(joy1Btn(5)) {
+		a_dtl->output = -NUDGE_POWER;
+	} else {
+		a_dtl->output = 0;
+	}
+
+	if(joy1Btn(8)) {
+		a_dtr->output = NUDGE_POWER;
+	} else if(joy1Btn(6)) {
+		a_dtr->output = -NUDGE_POWER;
+	} else {
+		a_dtr->output = 0;
+	}
+}
+
 // Program's entry point; includes main loop
 task main() {
 	// Drivetrain left, drivetrain right, flag raiser, archemedes screw
@@ -81,6 +101,7 @@ task main() {
 	  getJoystickSettings(joystick);
 
 	  // Process inputs
+	  nudgeDrive(&dtl, &dtr);
 	  scaleJoyValue(&dtl, joystick.joy1_y1);
 	  scaleJoyValue(&dtr, joystick.joy1_y2);
 	  scaleJoyValue(&fr, joystick.joy2_y1);
