@@ -13,10 +13,10 @@
 #pragma config(Servo,  srvo_S1_C3_6,    UNUSED5,              tServoStandard)
 
 const static int IR_SEEKING_VEL = 50;
-const static int TOTAL_BRIDGE_DIST = 1000;
+const static int TOTAL_BRIDGE_DIST = 50;
 const static int SERVO_CHANGE_RATE = 20;
-const static int ARM_EXTENDED_POS = 200;
-const static int ARM_RETRIEVED_POS = 100;
+const static int ARM_EXTENDED_POS = 90;
+const static int ARM_RETRIEVED_POS = 0;
 const static int MAX_VEL = 80;
 const static int CENTER_BRIDGE_DIST = 100;
 const static int RAMP_DIST = 500;
@@ -49,8 +49,24 @@ void moveServoTo(short a_name, int a_position) {
   }
 }
 
+// TODO: Run test to calibrate this
+int inchesToEncoder(float a_inches) {
+  const static int  ticksPerRotation = 1440;
+  const static float wheelCircumference = 4 * PI;
+
+  return a_inches * ticksPerRotation / wheelCircumference;
+}
+
 // TODO: figure out how to actually do this
 bool turnRight() {
+	const static int robotDiameter = 18;
+	const static int turnDist = robotDiameter * PI / 4;
+	const static int turnVel = 80;
+
+	motor[dt_left] = turnVel;
+	motor[dt_right] = -turnVel;
+	while(nMotorEncoder[dt_left] < turnDist) {}
+	moveDT(0);
 
   return false;
 }
@@ -96,6 +112,7 @@ task main() {
         }
       break;
 
+      // Pulls "arm" back to orgiinal position after dispensing the autonomous block
       case kRetrieveArm:
         if(ServoValue[auto_block] != ARM_RETRIEVED_POS) {
           moveServoTo(auto_block, ARM_RETRIEVED_POS);
@@ -104,9 +121,9 @@ task main() {
         }
       break;
 
-      // Move straight forward a certain number of encoder ticks
+      // Move straight forward a certain number of inches
       case kPassBridge:
-        if(nMotorEncoder[dt_left] < TOTAL_BRIDGE_DIST) {
+        if(nMotorEncoder[dt_left] < inchesToEncoder(TOTAL_BRIDGE_DIST)) {
           moveDT(MAX_VEL);
         } else {
           moveDT(0);
@@ -122,9 +139,9 @@ task main() {
         m_state++;
       break;
 
-      // Move straight forward a certain number of encoder ticks
+      // Move straight forward a certain number of inches
       case kCenterBridge:
-        if(nMotorEncoder[dt_left] < CENTER_BRIDGE_DIST) {
+        if(nMotorEncoder[dt_left] < inchesToEncoder(CENTER_BRIDGE_DIST)) {
           moveDT(MAX_VEL);
         } else {
           moveDT(0);
@@ -142,7 +159,7 @@ task main() {
 
       // Move straight forward a certain number of encoder ticks
       case kGetOnRamp:
-        if(nMotorEncoder[dt_left] < RAMP_DIST) {
+        if(nMotorEncoder[dt_left] < inchesToEncoder(RAMP_DIST)) {
           moveDT(MAX_VEL);
         } else {
           moveDT(0);
