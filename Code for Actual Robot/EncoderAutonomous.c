@@ -6,22 +6,28 @@
 #pragma config(Servo,  srvo_S1_C2_1,    auto_block,           tServoStandard)
 
 
-const static int IR_SEEKING_VEL = 30;
-const static int TOTAL_BRIDGE_DIST = 20;
-const static int SERVO_CHANGE_RATE = 20;
-const static int ARM_EXTENDED_POS = 90;
-const static int SERVO_STOP_TIME = 1000;
-const static int ARM_RETRIEVED_POS = 0;
-const static int MAX_VEL = 80;
-const static int CENTER_BRIDGE_DIST = 100;
-const static int RAMP_DIST = 500;
+const int IR_SEEKING_VEL = 30;
+const int TOTAL_BRIDGE_DIST = 20;
+const int ARM_EXTENDED_POS = 90;
+const int SERVO_STOP_TIME = 1000;
+const int ARM_RETRIEVED_POS = 0;
+const int MAX_VEL = 80;
+const int CENTER_BRIDGE_DIST = 100;
+const int RAMP_DIST = 500;
+
+const int ROBOT_DIAMETER = 20;
+const float TURN_DIST = ROBOT_DIAMETER * PI / 4;
+const int TURN_VEL = 60;
+
+const int TICKS_PER_ROTATION = 1350;
+const float WHEEL_CIRCUM = 3 * PI;
 
 
 void initializeRobot() {
   // Make sure all motors are not moving before waitForStart()
   motor[dt_left] = 0;
   motor[dt_right] = 0;
-  nMotorEncoder[dt_left] = 0; 
+  nMotorEncoder[dt_left] = 0;
 
   // Set default speed for the auto_block servo
   servoChangeRate[auto_block] = 0;
@@ -37,34 +43,18 @@ void moveDT(int a_speed) {
 
 }
 
-void moveServoTo(short a_name, int a_position) {
-  if(ServoValue[a_name] < a_position) {
-    servo[a_name] = ServoValue[a_name] + SERVO_CHANGE_RATE;
-  } else {
-    servo[a_name] = ServoValue[a_name] - SERVO_CHANGE_RATE;
-  }
+int inchesToEncoder(float p_inches) {
+  return p_inches * TICKS_PER_ROTATION / WHEEL_CIRCUM;
 }
 
-int inchesToEncoder(float a_inches) {
-  const static int  ticksPerRotation = 1350;
-  const static float wheelCircumference = 3 * PI;
-
-  return a_inches * ticksPerRotation / wheelCircumference;
-}
-
-bool turnRight() {
-	const static int robotDiameter = 18;
-	const static int turnDist = robotDiameter * PI / 4;
-	const static int turnVel = 80;
-
-	motor[dt_left] = -turnVel;
-	motor[dt_right] = turnVel;
-	while(abs(nMotorEncoder[dt_left]) < inchesToEncoder(turnDist)) {
+void turnRight() {
+  do {
+    motor[dt_left] = -TURN_VEL;
+    motor[dt_right] = TURN_VEL;
     writeDebugStream("turnRight: %d", nMotorEncoder[dt_left]);
-  }
-	moveDT(0);
+  } while(abs(nMotorEncoder[dt_left]) < inchesToEncoder(TURN_DIST));
 
-  return false;
+	moveDT(0);
 }
 
 task main() {
@@ -96,7 +86,6 @@ task main() {
         if(SensorValue[ir_seeker] != 5) {
           moveDT(IR_SEEKING_VEL);
         } else {
-        	wait10Msec(50);
           moveDT(0);
           m_state++;
         }
@@ -105,8 +94,8 @@ task main() {
       // Moves auto_block servo to a certain position
       case kDispenseBlock:
       	writeDebugStream("servoValue: %d", ServoValue[auto_block]);
-        if(ServoValue[auto_block] <= ARM_EXTENDED_POS) {
-          moveServoTo(auto_block, ARM_EXTENDED_POS);
+        if(ServoValue[auto_block] != ARM_EXTENDED_POS) {
+          servo[auto_block] = ARM_EXTENDED_POS;
         } else {
         	wait1Msec(SERVO_STOP_TIME);
           m_state++;
@@ -117,7 +106,7 @@ task main() {
       case kRetrieveArm:
       	writeDebugStream("servoValue: %d", ServoValue[auto_block]);
         if(ServoValue[auto_block] != ARM_RETRIEVED_POS) {
-          moveServoTo(auto_block, ARM_RETRIEVED_POS);
+          servo[auto_block] = ARM_RETRIEVED_POS;
         } else {
           m_state++;
         }
@@ -137,7 +126,7 @@ task main() {
 
       // Turn right 90 degrees
       case kTurnRight1:
-        turnRight(); 
+        turnRight();
         nMotorEncoder[dt_left] = 0;
         m_state++;
       break;
@@ -179,11 +168,6 @@ task main() {
 
       writeDebugStreamLine("");
   }
-}
-
-// Log - State machines may be well organized, but for what you are trying to do here, it may be overcomplicating the process.
-//       This may work perfectly well for you, but if you start to encounter issues that you are having difficulty finding the reason for,
-//       you may want to consider using a more straightforward structure for this. That being said, it looks good for what you said it needs to do.
 
   // "Special" RobotC thing where it needs a forever loop at the end of the autonomous program to wait for the end of the auonomous period
   for(;/*ever*/;) {}
