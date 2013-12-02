@@ -5,6 +5,7 @@
 #pragma config(Motor,  mtr_S1_C2_1,     flag_raiser,   tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C2_2,     archemedes,    tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
+#pragma config(Servo,  srvo_S1_C3_2,    blocker,              tServoStandard)
 
 #include "JoystickDriver.c"
 
@@ -12,6 +13,7 @@
 const int DEADZONE = 7;
 const float JOY_MAX_VAL = 127.0;
 const int NUDGE_POWER = 25;
+const int SERVO_MIN = 0, SERVO_MAX = 255, SERVO_DIFF = 20;
 
 // Data structure to try to keep things object-oriented and modular
 // Maps every motor to its #pragma, its max power, and its output during every loop
@@ -26,7 +28,7 @@ typedef struct {
 // Sets servo's starting position
 // Initializes all fields for "Actuators"
 void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator* p_as) {
-  servo[auto_block] = 0;
+  //servo[auto_block] = 0;
 
   p_dtl->id = dt_left;
   p_dtl->MAX_POWER = 80;
@@ -43,6 +45,11 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
   p_as->id = archemedes;
   p_as->MAX_POWER = 50;
   p_as->output = 0;
+
+  servo[auto_block] = 0;
+
+  servo[blocker] = 0;
+  servoChangeRate[blocker] = 0;
 }
 
 // Converts raw joystick values, which range from -128 to 127, into motor powers
@@ -82,6 +89,28 @@ void nudgeDrive(Actuator* p_dtl, Actuator* p_dtr) {
 	}
 }
 
+void servoOutput(short p_id, bool p_down, bool p_up) {
+	int output = ServoValue[p_id];
+
+	if(p_down==true) {
+		if(ServoValue[p_id]-SERVO_DIFF < SERVO_MIN) {
+			output = SERVO_MIN;
+			} else {
+			output = ServoValue[p_id] - SERVO_DIFF;
+			}
+	}else if(p_up==true) {
+		if(ServoValue[p_id]+SERVO_DIFF > SERVO_MAX) {
+			output = SERVO_MAX;
+		} else {
+			output = ServoValue[p_id] + SERVO_DIFF;
+		}
+	} else {
+		output = ServoValue[p_id];
+	}
+
+	servo[p_id] = output;
+}
+
 // Program's entry point; includes main loop
 task main() {
 	// Drivetrain left, drivetrain right, flag raiser, archemedes screw
@@ -107,5 +136,7 @@ task main() {
 	  motor[dtr.id] = dtr.output;
 	  motor[fr.id] = fr.output;
 	  motor[as.id] = as.output;
+
+	 	servoOutput(blocker, joy2Btn(5), joy2Btn(7));
   }
 }
