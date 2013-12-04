@@ -7,6 +7,16 @@
 #pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    blocker,              tServoStandard)
 
+/*
+Manipulators inlcuded:
+	* Four drivetrain motors wired to two ports
+	* One motor for circular torque (flag raiser)
+	* One motor for hang (archemedes screw)
+	* One servo for the flicker (scoring mechanism for autonomous)
+	* One servo for the blocker (defense strategy manipulator)
+*/
+
+
 #include "JoystickDriver.c"
 
 

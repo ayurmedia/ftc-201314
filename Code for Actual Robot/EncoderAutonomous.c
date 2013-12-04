@@ -5,6 +5,13 @@
 #pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop, reversed)
 #pragma config(Servo,  srvo_S1_C2_1,    auto_block,           tServoStandard)
 
+/*
+Manipulator included:
+  * Four drivetrain motors wired to two ports
+  * One servo for the flikcer (autonomous scoring mechanism)
+  * One IR seeker for finding the IR beacon
+*/
+
 
 const int IR_SEEKING_VEL = 30;
 const int TOTAL_BRIDGE_DIST = 20;
