@@ -14,6 +14,7 @@ Manipulator included:
 
 
 const int IR_SEEKING_VEL = 30;
+const int LAST_BUCKET_DIST = 30;
 const int TOTAL_BRIDGE_DIST = 20;
 const int ARM_EXTENDED_POS = 90;
 const int SERVO_STOP_TIME = 1000;
@@ -90,7 +91,7 @@ task main() {
       // Move forward until IR seeker centers the IR beacon
       case kFindIR:
       	writeDebugStream("ir_seeker: %d", SensorValue[ir_seeker]);
-        if(SensorValue[ir_seeker] != 5) {
+        if(SensorValue[ir_seeker] != 5 && nMotorEncoder[dt_left] < LAST_BUCKET_DIST) {
           moveDT(IR_SEEKING_VEL);
         } else {
           moveDT(0);
