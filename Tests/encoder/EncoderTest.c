@@ -12,7 +12,7 @@
 
 task main()
 {
-	nMotorEncoder[left] = 0;n
+	nMotorEncoder[left] = 0;
 
 	motor[left] = 50;
 	motor[right] = 50;
