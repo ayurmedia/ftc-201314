@@ -121,19 +121,6 @@ void nudgeDrive(Actuator* p_dtl, Actuator* p_dtr) {
 	}
 }
 
-void buttonMotor(Actuator* p_act, bool p_down, bool p_up) {
-	if(p_act->output == 0) {
-		if(!p_up && !p_down) {
-			p_act->output = 0;
-		} else if(p_up) {
-			p_act->output = p_act->MAX_POWER;
-		} else if(p_down) {
-			p_act->output = -p_act->MAX_POWER;
-		}
-	}
-}
-
-
 void servoOutput(short p_id, bool p_down, bool p_up) {
 	int output = ServoValue[p_id];
 
@@ -159,9 +146,8 @@ void servoOutput(short p_id, bool p_down, bool p_up) {
 // Program's entry point; includes main loop
 task main() {
 	// Drivetrain left, drivetrain right, flag raiser, archemedes screw
-	Actuator dtl, dtr, fr, as, ll;
+	Actuator dtl, dtr, fr, as;
 
-	//initializeRobot(&dtl, &dtr, &fr, &as, &ll);
 	initializeRobot(&dtl, &dtr, &fr, &as);
   // waitForStart();
 
@@ -176,8 +162,6 @@ task main() {
 	  scaleJoyValue(&fr, joystick.joy2_y2);
 
 	  nudgeDrive(&dtl, &dtr);
-
-	  //buttonMotor(&fr, joy1Btn(2), joy1Btn(3));
 
 	  // Output
 	  motor[dtl.id] = dtl.output;

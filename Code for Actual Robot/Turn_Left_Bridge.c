@@ -9,16 +9,13 @@
 #pragma config(Servo,  srvo_S1_C3_2,    blocker,              tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_3,    bucket,               tServoStandard)
 
+
 short ENCODER = dt_right;
 
 int MAX_POWER = 80;
-int MOVE_DIST_1 = 40;
-int TURN_DEGREES_1 = 60;
-int MOVE_DIST_2 = 40;
-int TURN_DEGREES_2 = 60;
-int IR_VEL = 30;
-int LAST_BUCKET_DIST = 40;
-int TURN_DEGREES_3 = 90;
+int MOVE_DIST_1 = 20;
+int TURN_DEGREES = 90;
+int MOVE_DIST_2 = 50;
 
 
 void initializeRobot() {
@@ -71,7 +68,9 @@ void moveInches(int p_inches) {
 	nMotorEncoder[ENCODER] = 0;
 	do {
 		moveDT(MAX_POWER);
+		writeDebugStreamLine("%d, %d", nMotorEncoder[ENCODER], encoder_dist);
 	} while(abs(nMotorEncoder[ENCODER]) < abs(encoder_dist));
+	moveDT(0);
 }
 
 task main() {
@@ -79,29 +78,16 @@ task main() {
 	//waitForStart(); // Wait for the beginning of autonomous phase.
 
 	// Move forward
+	writeDebugStream("move 1: ");
 	moveInches(MOVE_DIST_1);
 
-	// Turn to be parallel to wall
-	turnDegrees(TURN_DEGREES_1);
+	// Turn right
+	writeDebugStream("turn: ");
+	turnDegrees(TURN_DEGREES);
 
-	// Move foward
+	// Move forward onto the bridge
+	writeDebugStream("move 2: ");
 	moveInches(MOVE_DIST_2);
-
-	// Turn to be parallel to the bridge
-	turnDegrees(TURN_DEGREES_2);
-
-	// Move to find IR or until the last bucket
-	nMotorEncoder[ENCODER] = 0;
-	do {
-		moveDT(IR_VEL);
-	} while(SensorValue[ir_seeker] != 5 && nMotorEncoder[ENCODER] < inchesToEncoder(LAST_BUCKET_DIST));
-	moveDT(0);
-
-	// Turn 90 degrees
-	turnDegrees(TURN_DEGREES_3);
-
-	MOVEDT(0);
-
 
 	// "Special" RobotC thing where it needs a forever loop at the end of the autonomous program to wait for the end of the auonomous period
 		for(;/*ever*/;) {}

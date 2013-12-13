@@ -13,9 +13,9 @@
 short ENCODER = dt_right;
 
 int MAX_POWER = 80;
-int MOVE_DIST_1 = 36;
-int TURN_DEGREES = 45;
-int MOVE_DIST_2 = 60;
+int MOVE_DIST_1 = 20;
+int TURN_DEGREES = 80;
+int MOVE_DIST_2 = 50;
 
 
 void initializeRobot() {
@@ -27,7 +27,7 @@ void initializeRobot() {
 	// Set default speed for the auto_block servo
 	servoChangeRate[auto_block] = 0;
 	// Set the initial position for the auto_block servo
-	servo[auto_block] = ARM_RETRIEVED_POS;
+	servo[auto_block] = 0;
 
 	return;
 }
@@ -51,6 +51,8 @@ void turnDegrees(int p_degrees) {
 	const int turn_dist = ROBOT_DIAMETER * PI * p_degrees / 360;
 	int direction = p_degrees / abs(p_degrees);
 
+	nMotorEncoder[ENCODER] = 0;
+
 	do {
 		motor[dt_left] = -TURN_VEL * direction;
 		motor[dt_right] = TURN_VEL * direction;
@@ -66,7 +68,9 @@ void moveInches(int p_inches) {
 	nMotorEncoder[ENCODER] = 0;
 	do {
 		moveDT(MAX_POWER);
+		writeDebugStreamLine("%d, %d", nMotorEncoder[ENCODER], encoder_dist);
 	} while(abs(nMotorEncoder[ENCODER]) < abs(encoder_dist));
+	moveDT(0);
 }
 
 task main() {
@@ -74,12 +78,15 @@ task main() {
 	//waitForStart(); // Wait for the beginning of autonomous phase.
 
 	// Move forward
+	writeDebugStream("move 1: ");
 	moveInches(MOVE_DIST_1);
 
 	// Turn right
+	writeDebugStream("turn: ");
 	turnDegrees(TURN_DEGREES);
 
 	// Move forward onto the bridge
+	writeDebugStream("move 2: ");
 	moveInches(MOVE_DIST_2);
 
 	// "Special" RobotC thing where it needs a forever loop at the end of the autonomous program to wait for the end of the auonomous period
