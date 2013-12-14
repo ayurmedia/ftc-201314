@@ -1,10 +1,12 @@
-#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  none)
+#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
 #pragma config(Sensor, S1,     ,               sensorI2CMuxController)
 #pragma config(Sensor, S2,     ir_seeker,      sensorHiTechnicIRSeeker600)
 #pragma config(Motor,  mtr_S1_C1_1,     dt_left,       tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C2_1,     archemedes,    tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C2_2,     flag_raiser,   tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C2_1,     archemedes,    tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C2_2,     flag_raiser,   tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C4_1,     UNUSED,        tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C4_2,     linear_slide,  tmotorTetrix, openLoop, reversed)
 #pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    blocker,              tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_3,    bucket,               tServoStandard)
@@ -18,6 +20,8 @@ Manipulators inlcuded:
 	* Four drivetrain motors wired to two ports
 	* One motor for circular torque (flag raiser)
 	* One motor for hang (archemedes screw)
+	* One motor for linear slide (teleop scoring mechanism)
+	* One servo for bucket (teleop scoring mechanism)
 	* One servo for the flicker (scoring mechanism for autonomous)
 	* One servo for the blocker (defense strategy manipulator)
 */
@@ -43,7 +47,7 @@ typedef struct {
 
 // Sets servo's starting position
 // Initializes all fields for "Actuators"
-void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator* p_as) {
+void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator* p_as, Actuator* p_ls) {
   //servo[auto_block] = 0;
 
   p_dtl->id = dt_left;
@@ -62,6 +66,10 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
   p_as->MAX_POWER = 50;
   p_as->output = 0;
 
+  p_ls->id = linear_slide;
+  p_ls->MAX_POWER = 80;
+  p_ls->output = 0;
+
 
   servo[auto_block] = 0;
   servoChangeRate[auto_block] = 0;
@@ -78,6 +86,7 @@ void hardReset() {
 	motor[dt_right] = 0;
 	motor[archemedes] = 0;
 	motor[flag_raiser] = 0;
+	motor[linear_slide] = 0;
 
 	servo[auto_block] = 0;
 	servo[blocker] = 0;
@@ -143,13 +152,23 @@ void servoOutput(short p_id, bool p_down, bool p_up) {
 	servo[p_id] = output;
 }
 
+void buttonMotors(Actuator* p_act, bool p_down, bool p_up) {
+		if(p_down) {
+			p_act->output = -p_act->MAX_POWER;
+		} else if(p_up) {
+			p_act->output = p_act->MAX_POWER;
+		} else {
+			p_act->output = 0;
+		}
+}
+
 // Program's entry point; includes main loop
 task main() {
 	// Drivetrain left, drivetrain right, flag raiser, archemedes screw
-	Actuator dtl, dtr, fr, as;
+	Actuator dtl, dtr, fr, as, ls;
 
-	initializeRobot(&dtl, &dtr, &fr, &as);
-  waitForStart();
+	initializeRobot(&dtl, &dtr, &fr, &as, &ls);
+  // waitForStart();
 
   for(;/*ever*/;) {
   	// Get inputs
@@ -158,21 +177,23 @@ task main() {
 	  // Process inputs
 	  scaleJoyValue(&dtl, joystick.joy1_y1);
 	  scaleJoyValue(&dtr, joystick.joy1_y2);
-	  scaleJoyValue(&as, joystick.joy2_y1);
-	  scaleJoyValue(&fr, joystick.joy2_y2);
+	  scaleJoyValue(&ls, joystick.joy2_y1);
+	  scaleJoyValue(&as, joystick.joy2_y2);
 
 	  nudgeDrive(&dtl, &dtr);
+
+	  buttonMotors(&fr, joy1Btn(2) || joy2Btn(2), joy1Btn(3) || joy2Btn(3));
 
 	  // Output
 	  motor[dtl.id] = dtl.output;
 	  motor[dtr.id] = dtr.output;
 	  motor[fr.id] = fr.output;
 	  motor[as.id] = as.output;
-	  //motor[ll.id] = ll.output;
+	  motor[ls.id] = ls.output;
 
-	 	servoOutput(auto_block, joy2Btn(6), joy2Btn(8));
 	 	servoOutput(blocker, joy2Btn(5), joy2Btn(7));
-	 	servoOutput(bucket, joy2Btn(2), joy2Btn(4));
+	 	servoOutput(bucket, joy2Btn(6), joy2Btn(8));
+	 	servoOutput(auto_block, joy2Btn(1), joy2Btn(4));
 
 	  if(joy1Btn(9) || joy2Btn(9)) {
 	  	hardReset();
