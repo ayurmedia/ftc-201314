@@ -1,11 +1,11 @@
 #pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
 #pragma config(Sensor, S1,     ,               sensorI2CMuxController)
 #pragma config(Sensor, S2,     ir_seeker,      sensorHiTechnicIRSeeker600)
-#pragma config(Motor,  mtr_S1_C1_1,     dt_left,       tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop, encoder)
+#pragma config(Motor,  mtr_S1_C1_1,     dt_left,       tmotorTetrix, openLoop, reversed, encoder)
+#pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C2_1,     archemedes,    tmotorTetrix, openLoop, reversed)
 #pragma config(Motor,  mtr_S1_C2_2,     flag_raiser,   tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C4_1,     UNUSED,        tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C4_1,     motorH,        tmotorTetrix, openLoop)
 #pragma config(Motor,  mtr_S1_C4_2,     linear_slide,  tmotorTetrix, openLoop, reversed)
 #pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
 #pragma config(Servo,  srvo_S1_C3_2,    blocker,              tServoStandard)
@@ -63,7 +63,7 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
   p_fr->output = 0;
 
   p_as->id = archemedes;
-  p_as->MAX_POWER = 50;
+  p_as->MAX_POWER = 65;
   p_as->output = 0;
 
   p_ls->id = linear_slide;
@@ -71,7 +71,7 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
   p_ls->output = 0;
 
 
-  servo[auto_block] = 0;
+  servo[auto_block] = 155;
   servoChangeRate[auto_block] = 0;
 
   servo[blocker] = 0;
@@ -168,7 +168,7 @@ task main() {
 	Actuator dtl, dtr, fr, as, ls;
 
 	initializeRobot(&dtl, &dtr, &fr, &as, &ls);
-  // waitForStart();
+  waitForStart();
 
   for(;/*ever*/;) {
   	// Get inputs

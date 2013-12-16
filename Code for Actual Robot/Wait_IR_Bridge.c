@@ -93,6 +93,7 @@ void turnDegrees(int p_degrees) {
 task main() {
 	initializeRobot();
 	waitForStart(); // Wait for the beginning of autonomous phase.
+	wait1Msec(15000);
 
 	// Declares an enumeration defines all phases/states of the autonomous period
 	typedef enum {

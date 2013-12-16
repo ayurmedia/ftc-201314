@@ -20,7 +20,6 @@ Manipulator included:
 * Four drivetrain motors wired to two ports
 * One servo for the flikcer (autonomous scoring mechanism)
 * One IR seeker for finding the IR beacon
-
 */
 
 #include "JoystickDriver.c"
@@ -29,13 +28,13 @@ Manipulator included:
 short ENCODER = dt_left;
 
 const int IR_SEEKING_VEL = 30;
-const int LAST_BUCKET_DIST = 40;
-const int TOTAL_BRIDGE_DIST = 65;
+const int LAST_BUCKET_DIST = 45;
+const int TOTAL_BRIDGE_DIST = 60;
 const int ARM_EXTENDED_POS = 255;
 const int SERVO_STOP_TIME = 2000;
 const int ARM_RETRIEVED_POS = 0;
 const int MAX_VEL = 80;
-const int FIRST_TURN_DEGREE = -75;
+const int FIRST_TURN_DEGREE = -65;
 const int CENTER_BRIDGE_DIST = 50;
 const int SECOND_TURN_DEGREE = -140;
 const int RAMP_DIST = 55;
@@ -53,10 +52,10 @@ void initializeRobot() {
 	motor[flag_raiser] = 0;
 	motor[linear_slide] = 0;
 
-	servo[auto_block] = 155;
+	servo[auto_block] = 0;
   	servoChangeRate[auto_block] = 0;
 
-  	servo[blocker] = 0;
+  	servo[blocker] = 255;
   	servoChangeRate[blocker] = 0;
 
   	servo[bucket] = 0;
@@ -92,7 +91,7 @@ void turnDegrees(int p_degrees) {
 
 task main() {
 	initializeRobot();
-	waitForStart(); // Wait for the beginning of autonomous phase.
+	//waitForStart(); // Wait for the beginning of autonomous phase.
 
 	// Declares an enumeration defines all phases/states of the autonomous period
 	typedef enum {
@@ -119,7 +118,6 @@ task main() {
 			if(SensorValue[ir_seeker] != 5 && abs(nMotorEncoder[ENCODER]) < inchesToEncoder(LAST_BUCKET_DIST)) {
 				moveDT(IR_SEEKING_VEL);
 			} else {
-				wait1Msec(500);
 				moveDT(0);
 				m_state++;
 			}
