@@ -96,7 +96,8 @@ task main() {
 
 	// Declares an enumeration defines all phases/states of the autonomous period
 	typedef enum {
-		kFindIR = 0,
+		kStart = 0,
+		kFindIR,
 		kDispenseBlock,
 		kRetrieveArm,
 		kPassBridge,
@@ -113,6 +114,12 @@ task main() {
 	while(m_state != kFinishAuto) {
 		writeDebugStream("State %d: ", m_state);
 		switch(m_state) {
+
+			// To fix the bug where the flicker actuates immediately without moving forward if the beacon is above the first bucket.
+		case kStart:
+			moveDT(IR_SEEKING_VEL);
+			break;
+
 			// Move forward until IR seeker centers the IR beacon
 		case kFindIR:
 			writeDebugStream("ir_seeker: %d\t\tencoder: %d, target: %d", SensorValue[ir_seeker], nMotorEncoder[ENCODER], inchesToEncoder(LAST_BUCKET_DIST));
