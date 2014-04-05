@@ -1,0 +1,11 @@
+FTC Eastern Super Regional
+Software Status
+April 4
+End of the Competition
+
+
+"simpleTeleop" program has been rewritten to be as bare bone as possible.
+Teleop does not lag anymore because "getJoystickSettings(joystick);" has been put in place at the beginning of every iterature of the loop.
+
+"ForwardIRBridge" has been tested many times and works consistently (provided lined up correctly).
+"WaitForwardIRBridge" has been tested a few times and works just like the one without the wait.

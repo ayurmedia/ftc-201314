@@ -1,40 +1,21 @@
-#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  HTMotor)
+#pragma config(Hubs,  S1, HTMotor,  HTMotor,  HTServo,  none)
 #pragma config(Sensor, S1,     ,               sensorI2CMuxController)
-#pragma config(Sensor, S2,     ir_seeker,      sensorHiTechnicIRSeeker600)
-#pragma config(Motor,  mtr_S1_C1_1,     dt_left,       tmotorTetrix, openLoop, encoder)
-#pragma config(Motor,  mtr_S1_C1_2,     dt_right,      tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C2_1,     archemedes,    tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C2_2,     flag_raiser,   tmotorTetrix, openLoop, reversed)
-#pragma config(Motor,  mtr_S1_C4_1,     motorH,        tmotorTetrix, openLoop)
-#pragma config(Motor,  mtr_S1_C4_2,     linear_slide,  tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C1_1,     dt_right,      tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C1_2,     dt_left,       tmotorTetrix, openLoop, reversed)
+#pragma config(Motor,  mtr_S1_C2_1,     hang,          tmotorTetrix, openLoop)
+#pragma config(Motor,  mtr_S1_C2_2,     flag,          tmotorTetrix, openLoop)
 #pragma config(Servo,  srvo_S1_C3_1,    auto_block,           tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_2,    bucket,               tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_3,    servo3,               tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_4,    servo4,               tServoStandard)
-#pragma config(Servo,  srvo_S1_C3_5,    servo5,               tServoNone)
-#pragma config(Servo,  srvo_S1_C3_6,    servo6,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_2,    servo2,               tServoNone)
+#pragma config(Servo,  srvo_S1_C3_3,    bucket,               tServoStandard)
 
-/*
-Manipulators inlcuded:
-	* Four drivetrain motors wired to two ports
-	* One motor for circular torque (flag raiser)
-	* One motor for hang (archemedes screw)
-	* One motor for linear slide (teleop scoring mechanism)
-	* One servo for bucket (teleop scoring mechanism)*Changed to slot 2 as of Feb 6
-	* One servo for the flicker (scoring mechanism for autonomous)
-	* One servo for the blocker (defense strategy manipulator)*Removed as of Feb 6
-*/
+#include "JoystickDriver.c"  //Include file to "handle" the Bluetooth messages.
 
-#include "JoystickDriver.c"
 
 
 const int DEADZONE = 7;
 const float JOY_MAX_VAL = 127.0;
 const int NUDGE_POWER = 15;
-const int SERVO_MIN = 0, SERVO_MAX = 120, SERVO_DIFF = 10;
-// Data structure to try to keep things object-oriented and modular
-// Maps every motor to its #pragma, its max power, and its output during every loop
-// Eliminates the need to keep multiple variables for each motor
+
 typedef struct {
 	short id;
 	int MAX_POWER;
@@ -54,15 +35,15 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
   p_dtr->MAX_POWER = 80;
   p_dtr->output = 0;
 
-  p_fr->id = flag_raiser;
+  p_fr->id = flag;
   p_fr->MAX_POWER = 90;
   p_fr->output = 0;
 
-  p_as->id = archemedes;
+  p_as->id = hang;
   p_as->MAX_POWER = 80;
   p_as->output = 0;
 
-  servo[auto_block] = 30;
+  servo[auto_block] = 255;
   servoChangeRate[auto_block] = 0;
 
   servo[bucket] = 255;
@@ -74,8 +55,8 @@ void initializeRobot(Actuator* p_dtl, Actuator* p_dtr, Actuator* p_fr, Actuator*
 void hardReset() {
 	motor[dt_left] = 0;
 	motor[dt_right] = 0;
-	motor[archemedes] = 0;
-	motor[flag_raiser] = 0;
+	motor[hang] = 0;
+	motor[flag] = 0;
 
 	servo[auto_block] = 0;
 	servo[bucket] = 0;
@@ -117,41 +98,32 @@ void nudgeDrive(Actuator* p_dtl, Actuator* p_dtr) {
 		}
 	}
 }
-//Moves servos a certain distance, according to the const int list
-void servoOutput(short p_id, bool p_down, bool p_up) {
-	int output = ServoValue[p_id];
 
-	if(p_down==true) {
-		if(ServoValue[p_id]-SERVO_DIFF < SERVO_MIN) {
-			output = SERVO_MIN;
-			} else {
-			output = ServoValue[p_id] - SERVO_DIFF;
-			}
-	}else if(p_up==true) {
-		if(ServoValue[p_id]+SERVO_DIFF > SERVO_MAX) {
-			output = SERVO_MAX;
-		} else {
-			output = ServoValue[p_id] + SERVO_DIFF;
-		}
-	} else {
-		output = ServoValue[p_id];
-	}
 
-	servo[p_id] = output;
-}
-
-//simple code to control servos added January 25, 2014, last edits made February 1
-void simpleServo() {
-	if(joy2Btn(6)) {
-		servo[bucket] = 0;
+//with tims changes
+void newSimpleServo() {
+	if(joy2Btn(8)) {
+		servo[bucket] = 75;
 	  //servo[bucket2] = (127-127)+ERROR_VAL;
 	}
-	else if(joy2Btn(8)) {
-		servo[bucket] = 127;
+	else if(joy2Btn(6)) {
+		servo[bucket] = 180;
 		//servo[bucket2] = (127-0)+ERROR_VAL;
-
+	}
+	if(joy2Btn(5)) {
+		servo[bucket] = 0;
+	}
+	if(joy2Btn(7)) {
+		servo[bucket] = 40;
+	}
+	if(joy2Btn(1)) {
+		servo[auto_block] = 0;
+	}
+	if(joy2Btn(4)) {
+		servo[auto_block] = 255;
 	}
 }
+
 //Uses buttons rather than joysticks to move drive train
 void buttonMotors(Actuator* p_act, bool p_down, bool p_up) {
 		if(p_down) {
@@ -189,16 +161,35 @@ task main() {
 	  motor[dtl.id] = -dtr.output;
 	  motor[dtr.id] = -dtl.output;
 	  motor[fr.id] = fr.output;
-	  motor[as.id] = as.output;
-	  motor[ls.id] = ls.output;
 
-	 	//servoOutput(bucket, joy2Btn(6), joy2Btn(8));
-	 	servoOutput(auto_block, joy2Btn(1), joy2Btn(4));
-    //servoOutput(bucket2, joy2Btn(6), joy2Btn(8));
-    simpleServo();
 
 	  if(joy1Btn(9) || joy2Btn(9)) {
 	  	hardReset();
 		}
   }
+}
+
+int scaleJoyValue(float p_joy_val) {
+	// If the joystick value is the within the deadzone, do not move motors
+	if(abs(p_joy_val) < 3) {
+		return 0;
+	} else {
+		int direction = p_joy_val / abs(p_joy_val);
+		return  direction * (p_joy_val*p_joy_val) / (127*127) * 80;
+	}
+}
+
+void initializeRobot() {
+  motor[dt_left] = 0;
+  motor[dt_right] = 0;
+  motor[flag] = 0;
+  motor[hang] = 0;
+
+  servo[auto_block] = 255;
+  servoChangeRate[auto_block] = 0;
+
+  servo[bucket] = 255;
+  servoChangeRate[bucket] = 0;
+
+  return;
 }
